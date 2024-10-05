@@ -1,0 +1,14 @@
+.large-container{
+    padding-left: 5%;
+    background-color: rgba(255, 255, 255, 0.427);
+}
+.large-container .feed .card-pic{
+    width: 380px;
+}
+
+.container{
+    padding-left: 17%;
+}
+.container .feed .card-pic{
+    width: 340px;
+}

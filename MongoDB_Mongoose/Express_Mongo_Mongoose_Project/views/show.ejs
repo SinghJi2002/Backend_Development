@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+</head>
+<body>
+    <h1>Product Name: <%= product.Name  %> </h1> <br>
+    <h3>Product Price: <%= product.Price  %> <br>
+    Product Category: <%= product.Category  %> </h3> <br>
+    <a href="<%= product._id %>/update">Update Details</a><br>
+    <form action="<%= product._id %>/delete?_method=DELETE" method="post">
+        <button>Delete</button>
+    </form>
+</body>
+</html>

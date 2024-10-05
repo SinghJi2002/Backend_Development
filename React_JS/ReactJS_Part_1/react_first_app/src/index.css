@@ -1,0 +1,11 @@
+body{
+    padding: 0;
+    margin: 0;
+}
+.cards{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px 0px;
+}

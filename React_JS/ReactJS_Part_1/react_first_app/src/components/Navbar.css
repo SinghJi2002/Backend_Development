@@ -1,0 +1,11 @@
+ul{
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    background-color: beige;
+    color: black;
+    justify-content: right;
+    gap: 30px;
+    padding: 20px 30px;
+    margin: 0px 0px;
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Entry</title>
+</head>
+<body>
+    <h1>Update Form</h1><br>
+    <form action="/product/<%= product._id %>?_method=PUT" method="post">
+        <h3>Update Product Name</h3><br>
+        <input type="text" name="productName" id="productName" value="<%= product.Name %>"><br>
+        <h3>Update Product Price</h3><br>
+        <input type="text" name="productPrice" id="productPrice" value="<%= product.Price  %>"><br>
+        <h3>Update Product Category</h3>
+        <input type="text" name="productCategory" id="productCategory" value="<%= product.Category  %>"><br>
+        <button>Submit</button>
+    </form>
+</body>
+</html>

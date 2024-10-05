@@ -1,0 +1,22 @@
+.recommended-list{
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    padding-top:10px;
+}
+
+.recommended{
+    display: flex;
+    column-gap: 10px;
+    align-items: center;
+}
+
+
+.pic{
+    width: 180px;
+    height: 110px;
+    border-radius: 20px;
+}
+.card-title{
+    font-size: 18px;
+}

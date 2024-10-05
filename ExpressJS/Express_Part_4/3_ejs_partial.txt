@@ -1,0 +1,3 @@
+Next functionality I would like to mention is the partial or include functionaly that ejs offers us. Using this what I can do is I can have 2 ejs files, one that is the main template of the website and the other being lets say a component of the main template. Using the partial property we can actually stick the component ejs file onto the main template file. For instance we can stick a submit button component onto the main template.
+
+For understanding watch how in the view folder we have created a submit.ejs and we have the main template as index.ejs. We at the end of document are using partial or include to stick the submit.ejs component onto index.ejs.

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <H1>Displaying comment with id <%= id %></H1>
+    <% for(let comment of comments) { %>
+        <% if(id==comment.id) {%>
+            <h3><%= comment.username%> - <%=comment.comment  %></h3>
+        <% break } %>
+    <% } %>
+</body>
+</html>

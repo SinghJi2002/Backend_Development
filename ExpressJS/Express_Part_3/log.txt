@@ -1,0 +1,9 @@
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET
+function now() { [native code] } is GET

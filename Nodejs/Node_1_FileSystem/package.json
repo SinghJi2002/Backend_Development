@@ -1,0 +1,12 @@
+{
+  "name": "node_1",
+  "version": "1.0.0",
+  "description": "Node.js is not programming language, technology, framework or library but its a JS run time environment.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Ashutosh",
+  "license": "ISC"
+}

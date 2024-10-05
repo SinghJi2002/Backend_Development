@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Product</title>
+</head>
+<body>
+    <h1>Product Form</h1>
+    <form action="/product" method="post" >
+        <label for="productName">
+            Product Name <br>
+            <input type="text" name="productName" id="productName" required>
+        </label>
+        <br>
+        <label for="productPrice">
+            Product Price <br>
+            <input type="number" name="productPrice" id="productPrice" required>
+        </label>
+        <br>
+        <label for="productName">
+            Product Catetory(Select Between fruit,vegetable and dairy) <br>
+            <input type="text" name="productCategory" id="productCategory">
+        </label>
+        <br>
+        <button>Submit</button>
+    </form>
+</body>
+</html>
