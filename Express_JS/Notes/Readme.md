@@ -1134,5 +1134,1016 @@ These two examples are more than enough to understand the implementation of REST
 
 Express middlewares are function that run during the request/repeat lifecycle. Each of these middlewares have the access to request and response objects. Middleware can end the HTTP request by sending back a response with methods like res.send(). Middlewares can also be chained together, one after the other by calling next().
 
-## Using Morgan- Logger Middleware 
+One of the eassiet way to build a middleware is use `app.use`. Following instances will clear the implementation of middleware. 
+
+## Using Predefined Middleware- Morgan- Logger Middleware 
+
+The following code is example of us working with predefined middleware, morgan in this case,
+
+```js
+const express=require('express')
+const morgan=require('morgan')
+const app=express()
+
+//Instance of using morgan
+app.use(morgan('tiny'))
+
+//Morgan has a next preinstalled to it. So it can execute .get command without any issue.
+app.get("/",(req,res)=>{
+    res.send("Hey Guyzz!!")
+})
+
+app.listen(3000);
+```
+
+The point of using this middleware is that it logs every request pinged at it.
+
+For instance, 
+
+![alt text](image-45.png)
+
+## Defining Our Series Of Middlewares
+
+The following code shows implementation of multiple middlewares, 
+
+```js
+const express=require('express')
+const morgan=require('morgan')
+const app=express()
+
+//All the app.use and app.get represent middlewares. Using 'return next' is neccessary at the end of each of the 'app.use' or else the process will stop at one of the middleware with no 'return next()'. Also, res.send command sends response, and as soon as response is sent the cycle ends. If in case suppose we would have placed the 'app.get' between app.use middlewares, then after res.send command is executed(response) is sent, remaining app.use would not have been executed.
+
+app.use((req,res,next)=>{
+    console.log("This is first middleware")
+    return next()
+})
+app.use((req,res,next)=>{
+    console.log("This is the second middleware")
+    return next()
+})
+app.use((res,req,next)=>{
+    console.log("This is the third middleware")
+    return next()
+})
+
+app.get('/',(req,res)=>{
+    res.send("Hello There!!")
+})
+
+app.listen(3000);
+```
+
+The output seems as follows,
+
+![alt text](image-46.png)
+
+## Developing A Complex Middleware
+
+Code is as follows,
+
+```js
+const express=require('express')
+const app=express()
+
+app.use((req,res,next)=>{
+    req.requestTime=Date.now()
+    console.log(req.method,req.path)
+    return next()
+})
+
+app.get('/',(req,res)=>{
+    console.log(req.requestTime)
+    res.send("Hello There!!")
+})
+
+app.listen(3000)
+```
+The output is as follows,
+
+![alt text](image-47.png)
+
+## Developing A 4O4 Error Route
+
+```js
+const express=require('express')
+const app=express()
+
+app.get('/',(req,res,next)=>{
+    res.send("Home Page")
+})
+app.get('/dog',(req,res,next)=>{
+    res.send("Dog Page")
+})
+app.get('/cat',(req,res,next)=>{
+    res.send("Cat Page")
+})
+
+//This is the 404 route. Its always placed at the last or else it will get executed at every ping. All the pings at the route / /dog and /cat will execute sucessfully. On ping at any other route, this 404 route will execute.
+app.use((req,res)=>{
+    res.status(404).send("Not Found!!")
+})
+
+app.listen(3000);
+```
+
+## Query Authentication Using Middlewares
+
+```js
+const express=require('express')
+const app=express()
+
+//What we are going to do is simple. We create a secret. We will display it on a web page. But we will protect the route on which this secret is to be displayed. We will create password for verification. We will create a URL, and in that URL we will send a query, password. This password will be verified, and secret will be displayed. Else password wrong message will be displayed. 
+
+app.get("/",(req,res)=>{
+    res.send("This is homepage")
+})
+
+const verifyPassword=(req,res,next)=>{
+    const {password}=req.query
+    if(password=='iamsexy'){
+        return next()
+    }
+    res.send("Wrong Password")
+}
+
+app.get("/secret",verifyPassword,(req,res)=>{
+    res.send("My Secret is I love eating")
+})
+
+//Lets understand whats happening in the code above. The first route is the homepage route. Next is the function to check password's accuracy. When localhost:3000/secret?password= is called, password applied is checked by this function. If correct, next() is called, triggering GET on the /secret route. If wrong, "Wrong Password" is displayed. 
+
+//Lets understand basic semantics. There are 2 callbacks being triggered here in the /secret GET route. The 'verifyPassword' and the normal callback. The 'verifyPassword' callback is executed first and then based on what happens in this callback, the next callback is called, sometimes not called.
+
+app.listen(3000)
+```
+
+The outputs look as follows,
+
+![alt text](image-48.png)
+
+![alt text](image-49.png)
+
+# Express Routers
+
+
+In general when we an `app.js` file in express looks something like this.
+
+```js
+app.get("/",(req,res)=>{
+    res.render('openingPage.ejs')
+})
+app.post("/login",async(req,res)=>{
+    const {username,password} = req.body
+    const usernameFound=await authorSchema.findOne({username:username})
+    if(usernameFound){
+        if(usernameFound.password==password){
+            res.redirect(`/homepage/${username}`)
+        }
+        else{
+            res.render('loginPage',{error:'Incorrect Password. Please Try Again'})
+        }
+    }
+    else{
+        res.render('loginPage',{error:'Something Went Wrong. Please Try Again'})
+    }
+})
+app.post("/signup",async (req,res)=>{
+    const {name,username,password,email}=req.body
+    const blogger=new authorSchema({
+        name:name,
+        username:username,
+        password:password,
+        email:email
+    })
+    await blogger.save()
+    res.redirect('/login')
+})
+app.post("/write/:username",async(req,res)=>{
+    const {username}=req.params
+    const {title,subtitle,content}=req.body
+    const newBlog=new blogSchema({
+        title:title,
+        subtitle:subtitle,
+        content:content,
+        username:username
+    })
+    await newBlog.save()
+    res.redirect(`../homepage/${username}`)
+})
+app.post("/forgetPassword",async(req,res)=>{
+    const {email}=req.body
+    const emailFound=await authorSchema.findOne({email:email})
+    if(!emailFound){
+        res.status(404).send('Email Not Found')
+    }
+    const password=emailFound.password
+    sendPassword(email,password)
+
+})
+app.get("/login",(req,res)=>{
+    res.render('loginPage.ejs',{error:null})
+})
+app.get("/signup",(req,res)=>{
+    res.render('signupPage.ejs')
+})
+app.get("/homepage/:username",async(req,res)=>{
+    const {username}=req.params
+    const userdata=await authorSchema.findOne({username:username})
+    const date=userdata.createdAt.toLocaleDateString()
+    const time=userdata.createdAt.toLocaleTimeString()
+    const blogData=await blogSchema.find({})
+    res.render('homepage.ejs',{userdata:userdata,date:date,time:time,blogData:blogData})
+})
+app.get("/write/:username",(req,res)=>{
+    const {username}=req.params
+    res.render('write.ejs',{username:username})
+})
+app.get("/community/:username",async(req,res)=>{
+    const {username}=req.params
+    const blogData=await blogSchema.find({})
+    res.render('community.ejs',{blogData:blogData,username:username})
+})
+app.get("/blog/:_id",async(req,res)=>{
+    const {_id}=req.params
+    const blogData=await blogSchema.findOne({_id:_id})
+    const date=blogData.createdAt.toLocaleDateString()
+    const time=blogData.createdAt.toLocaleTimeString()
+    res.render('blog.ejs',{blogData:blogData,date:date,time:time})
+})
+app.get("/forgetPassword",(req,res)=>{
+    res.render("forgotPassword.ejs")
+})
+```
+
+As observable, it tends to have many routes. And the issue is that presence of that many routes makes it very difficult for us to read a program. To solve this issue, we have the concept of `Express Routers`.
+
+To use this, note we work with two things. Firstly we create a `routes` folder, then add `.js` files to it. Secondly we have the main `app.js` file in main directory. 
+
+Each of these `.js` files added to the `routes` folder will have routes that use common prefixes. This files will then be imported into the main `app.js` file. This will then be used using a middleware. To understand everything that has been said here, see the demonstration below.
+
+
+Suppose we have the following code in `app.js` file.
+
+```js
+const express=require('express')
+const app=express()
+
+app.get("/campground/:username",async(req,res)=>{
+    const {username}=req.params
+    let campData=await campgroundSchema.find({})
+    res.render('campGround.ejs',{campData:campData,username:username})
+})
+app.get("/campground/:username/create",(req,res)=>{
+    const {username}=req.params
+    res.render("addNewForm.ejs",{username:username})
+})
+app.get("/campground/:username/:id/edit",async(req,res)=>{
+    const {username,id}=req.params
+    const single_data=await campgroundSchema.findOne({_id:id})
+    res.render('editForm.ejs',{single_data:single_data,username:username,id:id})
+})
+app.get("/campground/:username/:id/delete",async(req,res)=>{
+    const {username,id}=req.params
+    res.render("delete.ejs",{id:id,username:username})
+})
+app.get("/campground/:username/:id",async(req,res)=>{
+    const {username,id}=req.params
+    const reviewData=await reviewsSchema.find({locationid:id})
+    const campData_single=await campgroundSchema.findOne({_id:id})
+    res.render('showDetails.ejs',{campData_single:campData_single,username:username,id:id,reviewData:reviewData})    
+})
+app.get("/campground/:username/:id/review",async(req,res)=>{
+    const {username,id}=req.params
+    res.render('review.ejs',{username:username,id:id})
+})
+
+app.listen(3000)
+```
+
+Now in the code above we see that each of the route have this part in common, `/campground/:username`. So what can we do is, we can create a `route` folder, and create a `campground.js` file in it. In that file, we will write the following code,
+
+
+```js
+const express=require('express')
+const app=express()
+const router=express.Router()
+
+router.get("/",async(req,res)=>{
+    const {username}=req.params
+    let campData=await campgroundSchema.find({})
+    res.render('campGround.ejs',{campData:campData,username:username})
+})
+router.get("/create",(req,res)=>{
+    const {username}=req.params
+    res.render("addNewForm.ejs",{username:username})
+})
+router.get("/:id/edit",async(req,res)=>{
+    const {username,id}=req.params
+    const single_data=await campgroundSchema.findOne({_id:id})
+    res.render('editForm.ejs',{single_data:single_data,username:username,id:id})
+})
+router.get("/:id/delete",async(req,res)=>{
+    const {username,id}=req.params
+    res.render("delete.ejs",{id:id,username:username})
+})
+router.get("/:id",async(req,res)=>{
+    const {username,id}=req.params
+    const reviewData=await reviewsSchema.find({locationid:id})
+    const campData_single=await campgroundSchema.findOne({_id:id})
+    res.render('showDetails.ejs',{campData_single:campData_single,username:username,id:id,reviewData:reviewData})    
+})
+router.get("/:id/review",async(req,res)=>{
+    const {username,id}=req.params
+    res.render('review.ejs',{username:username,id:id})
+})
+```
+
+Now once our router file is ready we will go back to working with `app.js` file. Now all the routes we saw in the code above in `app.js` can be deleted. In place of that we will use a middleware, that will take 2 things, first the common prefix of all the routes in the router, and then the router itself. See the code below,
+
+```js
+const express=require('express')
+const router=express.Router()
+const app=express()
+const campUsernameRouter=require('./routes/campground.js')
+
+app.use('/campground/:username',campUsernameRouter)
+
+app.listen(3000)
+```
+
+So this is how we use express routers for cleaning of code.
+
+# Express Cookies
+
+Cookies are little bits of information that are stored in a user's browser when browsing a particular website. 
+
+Once cookie is set, the user's browser will send the cookie on every subsequent request to the site.
+
+Cookies are used to make HTTP stateful which in defination is stateless.
+
+Now the question arises that how to we work with cookies. How to send them? How to read them? and etc. So here is simple implementation.
+
+```js
+const express=require('express')
+const app=express()
+
+app.get('/',(req,res)=>{
+    res.cookie('name','ashutosh')
+    res.cookie('food','chola')
+    res.send("Cookies are send!!")
+})
+
+app.listen(3000)
+```
+As observable, `res.cookies` is used to send cookies to the browser. This will take 2 attributes, `name` of the cookie and the `value` of cookie. Now we are done with how do we send cookies.
+
+Understand this, all the cookies that a website sends are saved by the browser for that particular website, and as soon as website is changed the cookies utilised and displayed(in the application tab) are changed until they are trakers. (Cookies are always saved for all websites no matter which website you are accessing). 
+
+Same will happen when we will work with `localhost:3000`. No matter what the route is, for instance `/` and `/about`, the cookies sent will be the same for all request no matter whether the cookies were sent by the `/` route or `/about` route since the net website, will always be `localhost:3000`. 
+
+Now that we have seen how to send cookies, lets see how do we access it.
+
+For that we first need to install `cookie-parser`.
+
+    npm i cookie-parser
+
+After the pakage is installed write the following basic code.
+
+```js
+const express=require('express')
+const app=express()
+const cookieParser=require('cookie-parser')
+
+app.use(cookieParser())
+
+app.get('/getCookies',(req,res)=>{
+    const {name,food}=req.cookies
+    console.log(`Cookie values are ${name} and ${food}`)
+    res.send("Did you get the cookies?")
+})
+```
+
+So in above code we import `cookie-parser` and add it to middleware just like we do in case of `url-encoded` that we need to read req.body contents. We access cookie of a website via `req.cookies` and we read that with help of `cookie-parser`.
+
+Now lets talk about `Signing Cookies`. So what is `Signing Cookies`? Lets understand this with the help of a anology. Whenever we buy a jar of jam we see that it comes with a seal. And on that seal its written `Do not take if seal broken`. What the seal is actually doing here is that it is ensuring no one has interfered with the integrity of jam jar. Its similar in the case of `Signing Cookies`. We know that a website sends cookies to the client or the browser in this case. This is many times accessed by the server when the website is loaded on the client or the browser. At times, it becomes important that the value of the cookie is maintained as it was when saved and is not interfered with. To check whether the cookie is changed or not, we use the concept of `Signing Cookies` hence ensuring the integrity of cookie like jam.
+
+Now how is this performed? See the code and the explaination that follows.
+
+```js
+const express=require('express')
+const app=express()
+const cookieParser=require('cookie-parser')
+
+app.use(cookieParser('thisIsTheSecretCode'))
+
+app.get("/",(req,res)=>{
+    res.cookie('name','ashutosh')
+    res.cookie('food','chola')
+    res.cookie('fruit','apple',{signed:true})
+    res.send("Cookies have been sent!!")
+})
+
+app.get("/access",(req,res)=>{
+    res.send(req.cookies)
+})
+
+app.get("/accessSigned",(req,res)=>{
+    res.send(req.signedCookies)
+})
+
+app.listen(3000)
+```
+
+Now lets understand what is happening in the code above. 
+
+This time you might be observing that cookie-parser middleware is having some text. Well its nothing but encryption key followed to store cookie values. If its changed, all the cookies saved with this encryption key stop working.
+
+Initially we see all the important libraries are being imported. Then from the home route, normal cookies and signed cookies are sent.
+
+Now comes the cookie access routes. The output of `/access`looks something like this.
+
+![alt text](image-51.png)
+
+What is important to note is that there is no signed cookie being showed. For that we use a special route, that is `/accessSigned` that uses `req.signedCookie` rather than `req.cookies`. The output looks something like this,
+
+![alt text](image-52.png)
+
+Now that this is clear. Lets talk about some extremeties. This is how the application tab of console looks on the previous page.
+
+![alt text](image-53.png)
+
+What if we delete the value of signed integer?
+
+Well,
+
+![alt text](image-55.png)
+
+![alt text](image-54.png)
+
+
+What if we change the value but not delete it?
+
+
+Well,
+
+![alt text](image-56.png)
+
+![alt text](image-57.png)
+
+As we can see that signing cookies save integrity and report it if it is compromised.
+
+# Express Sessions
+
+Now let's talk about sessions. Sessions is kind of similar to cookies but is also different. Generally it is considered that its not correct to store lot of data on the client side(on the browser) using cookies to perform various functions.
+
+This is where sessions come in. Sessions are a server-side data store that are used to make HTML stateful. Instead of storing data using cookies, we store data on server-side and then send the browser a cookie that generally contains the key that can be used by the client to retrieve data from the server. The following pictures explain this quite clearly.
+
+![alt text](image-58.png)
+
+Lets understand what is happening here. Whenever we log on into e-commerce websites, we are not asked to login but are allowed to surf the site. User can surf the site and add objects they want to buy to the cart. But when BUY NOW is clicked, login is asked. 
+
+But while all this is happening, how is the site able to keep the record of the user without login? how and where is the site storing the cart information without login?
+
+Well all this happening via the help of sessions.
+
+As soon as user enter the website, sessions assigns a session id to the user in the form of cookie. All the acts that user performs that generates data are stored on the server side in dataserver(in this case items added to the cart). But session id which is linked to the user on one end is also linked to data on dataserver on the other end and helps the website to maintain record of user and user cart.
+
+Hence the transaction is quite simple. User enters the site is assigned some session id. User adds item to cart. Cart data is stored in the server but the data is linked to data id. Server assigned session id is then used by client to access data from dataserver.
+
+![alt text](image-59.png)
+
+Now that the concept of sessions is clear. Lets now move onto the implementation.
+
+The first thing that we need to do in order to work with sessions is to install the express-sessions pakage.
+
+    npm i express-session
+
+Now lets move onto the code.
+
+```js
+const express=require('express')
+const session=require('express-session')
+const app=express()
+
+app.use(session({secret:"thisismysecret",resave:false,saveUninitialized:true}))
+
+app.listen(3000)
+```
+
+Code is simple, express and express-session are imported. Since we require middleware to execute express sessions, we do it. This middleware takes 3 main things, secret, whose function is same as in case of cookie-parser, that is to create signed cookies. The other, resave and saveUninitialized should be studied from the this link, `https://www.npmjs.com/package/express-session`.
+
+Now when this code is run, note that there are no routes but when we will open the application tab of dev tools we will see that there is a session id cookie assigned to us there called `connect-sid`.
+
+![alt text](image-60.png)
+
+Now lets see how to we use express-sessions to retain information and access it around different routes. Note the session dataserver is the RAM memory in our case hence when server will be restarted, all the values will be lost.
+
+Now lets see how to we create server side data storage using session and also how do we access this data.
+
+```js
+const express=require('express')
+const session=require('express-session')
+const app=express()
+
+app.use(session({secret:"thisismysecret",resave:false,saveUninitialised:true}))
+
+
+//Creating server side data object 'username' using session's 'req.session'
+app.get('/register', (req, res) => {
+    const { username = 'Anonymous' } = req.query;
+    req.session.username = username;
+    res.redirect('/greet')
+})
+
+//Accessing session serverside value using req.session
+app.get('/greet', (req, res) => {
+    const { username } = req.session;
+    res.send(`Welcome back, ${username}`)
+})
+
+app.listen(3000, () => {
+    console.log('listening on port 3000')
+})
+```
+
+# Authentication
+
+## Authentication vs Authorisation
+
+| Authentication | Authorisation |
+| --- | --- |
+| Authentication is process of verifying who the user is. We typically authenticate with username/password combo, but we can also use security question, facial recognition and etc | Authorization is verifying what user has the access to. Generally we authorise after user has been authenticated. Its like now we know who you are, now here is what you can access and cannot access. |
+
+## Signing Up and Rules Associated with it
+
+* The basic rule while allowing user to create username and password is to ensure we as developers do not store password as plain text.
+
+* Simple solution to this problem is using  `hashing` function. Hashing functions are functions that map input data of some arbitary size to fixed sized output. In simple terms these encode are password making it difficult for hackers to decipher password.  
+
+![alt text](image-61.png)
+
+* Lets talk about flow of hashing. The user creates a account with username and password. User name is stored in the database as it is, but we then pass the password via hashing function, encrypt it, and  then store it in the database. When login attempt is made, a similar process is followed. User enter its username and password, password is then encrypted, it is then matched with the encryption stored in the database, then login is granted or blocked on the basis of matching.
+
+![alt text](image-62.png)
+
+## What is a good hashing function?
+
+* One-way function which is infeasable to invert. That is it should take input, encrypt it, but it should not be able decrypt the encrypted data.
+
+* Small changes in input yields large change in the output.
+
+* Should always generate the same encryption always for the same input.
+
+* Should not generate the same encryption for different inputs.
+
+* Should be deleberately slow.
+
+## Password Salts
+
+Now we have already discussed a lot about encryption of passwords to ensure safe authentication. Now lets look at another aspect of it.
+
+For us to access any site, we need to create a account and that account requires username and password. What is seen is, though usernames are different, many at times, passwords turn out to be the same, hence the encryption which is saved in the database turn out to be same.
+
+Now lets think with the perspective of a hacker. He can easily access list of common passwords and then he can simply guess the hashing function, use that function to generate encryption for most common used passwords and then match them against encryptions stored in the database resulting in compromise of data of many users.
+
+To stop this we use what we call `Password Salts`. A salt is random value added to password before we hash it. 
+
+What it ensures is that even though the base passwords are same, the encryption differ as there is different salt assigned to different passwords. Hence ensuring cracking of password one account do not result in hacking of many other accounts with the same password.
+
+## Encryption Function: Hashing: Bcrypt
+
+We talked all about encryption,hashing and salt till now in this journey of authentication. Lets now implement this. To implement this we are going to use javascript library `bcrypt`. Firstly we install bcrypt,
+
+    npm i bcrypt
+
+Now follow the code below,
+
+```js
+const express=require('express')
+const app=express()
+const bcrypt=require('bcrypt')
+
+//This is the function that we will use for encryption. This function intially takes the word that need to be encrypted.
+const encryptionFunction= async (word)=>{
+
+    //Then salt is generated for that word.
+    const salt=await bcrypt.gensalt(10)
+
+    //Encryption is generated for that word and the salt added to it
+    const hash=await bcrypt.hash(word,salt)
+    
+    //We print hash and salt
+    console.log(`The encrypted hash is ${hash}`)
+    console.log(`The generated salt is ${salt}`)
+}
+```
+
+As you can see above we have performed basic encryption using bcrypt. The output looks as follows.
+
+![alt text](image-63.png)
+
+Now that we are clear in the front of generating salt and then generating the hashed password, the next thing we need to do is compare. Compare the hashed password stored in database and the password being entered by the user and then decide whether the password entered was correct or not.
+
+See the code below to understand how does it work.
+
+```js
+const express=require('express')
+const app=express()
+const bcrypt=require('bcrypt')
+
+async function main(){
+    //Creating hashed password
+    async function hashing(password){
+        const salt= await bcrypt.genSalt(10)
+        const hashing=await bcrypt.hash(password,salt)
+        return(hashing)
+    }
+
+    const encryption=await hashing('password')
+
+    //Comparing hash password and word password
+    async function checkPassword(password,encryption){
+        const same=await bcrypt.compare(password,encryption)
+        return(same)
+    }
+    const isSame=await checkPassword('password',encryption)
+
+    //Printing the verdict
+    if(isSame){
+        console.log("Password are correct")
+    }
+    else{
+        console.log("Password are not correct")
+    }
+}
+main()
+```
+
+As you can see we do the comparison with help of `compare` method.
+
+## Express and Bcrypt
+
+Now lets build an express app with bcrypt. We are going to have databases, protected routes login and signups and etc. Its going to be fun.
+
+Lets first write our database model.
+
+```js
+const mongoose=require('mongoose')
+const userSchema=new mongoose.Schema({
+    username:{
+        type:String,
+        unique:true,
+        required:true
+    },
+    password:{
+        type:String,
+        required:true
+    }
+})
+
+module.exports=mongoose.model('userSchema',userSchema)
+```
+
+Next lets build the sign up page.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/signup" method="post">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" class="username"> <br>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" class="password">
+        <button>Sign Up</button>
+    </form>
+</body>
+</html>
+```
+
+Next we build the login page.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/login" method="post">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" class="username"> <br>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" class="password">
+        <button>Sign Up</button>
+    </form>
+    <% if(error) {%>
+        <p style="color:red">There was some issue.</p>
+    <% } %>
+</body>
+</html>
+```
+
+Next we build our express app.
+
+```js
+const express=require('express')
+const mongoose=require('mongoose')
+const bcrypt=require('bcrypt')
+const path=require('path')
+const ejsMate=require('ejs-mate')
+const sessions=require('express-session')
+const userSchema=require('./models/userSchema')
+const app=express()
+
+mongoose.connect('mongodb://localhost:27017/authDemo').then(() => {
+    console.log('MongoDB Database connected');
+}).catch(err => {
+    console.error('MongoDB Connection Error:', err);
+});
+
+
+app.set('view engine','ejs')
+app.set('views',path.join(__dirname,'views'))
+app.use(express.urlencoded({ extended: true }));
+app.engine('ejs',ejsMate)
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(sessions({secret:'thisisnotagoodpassword'}))
+
+app.post("/signup",async(req,res)=>{
+    const {username,password}=req.body
+    const salt=await bcrypt.genSalt(10)
+    const hash=await bcrypt.hash(password,salt)
+    const newUser=new userSchema({
+        username:username,
+        password:hash
+    })
+    await newUser.save()
+    res.redirect("/login")
+})
+app.post("/login",async(req,res)=>{
+    const {username,password}=req.body
+    const userFound=await userSchema.findOne({username:username})
+    if(userFound){
+        const isPassword=await bcrypt.compare(password,userFound.password)
+        if(isPassword){
+            req.session.user_id=userFound._id
+            res.send("Correct Password")
+        }
+        else{
+            res.render('login.ejs',{error:true})
+        }
+    }
+    else{
+        res.render('login.ejs',{error:true})
+    }
+})
+
+
+app.get("/signup",(req,res)=>{
+    res.render('signup.ejs')
+})
+app.get("/login",(req,res)=>{
+    const error=false
+    res.render('login.ejs',{error:error})
+})
+
+app.listen(3000)
+```
+
+
+# File Upload
+
+Now we have worked with forms many at times and we have send and extracted data from them. But till now, we have not worked with sending and recieving files via form. The file can be anything, it could be a image, word file, pdf etc. So now lets take a look how could we achieve this.
+
+The first change that we make is on the form itself. We are going to include a new attribute `enctype` and give it the value `multipart/form-data`. Something like this,
+
+```html
+<form action="/upload" method="post" enctype="multipart/form-data"></form> 
+```
+
+Now we know whenever we recieve data from a form we need a middleware to parse the data. Well the case is similar here. In order to parse a `multipart form` we need a middleware and that is called multer. To use multer we need to first install it.
+
+    npm i multer
+
+Then we need to require and initialise it mentioning the location we want the images to be save at under the `upload` variable which will be later used to initialise middlewares. 
+
+Note that multer provides us two already built middlewares, `upload.single('_name of field__')` and `upload.array('__name of field__')`. The code below is a simple implementation of all this things,
+
+First is a html page that takes single image `singleImage.ejs`,
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/singleImage" method="post" enctype="multipart/form-data">
+        Username <input type="text" name="username" id="username"> <br>
+        Password <input type="text" name="password" id="password"> <br>
+        <input type="file" name="singleImageField" id="singleImageField">
+    </form>
+</body>
+</html>
+```
+
+The page looks something like this,
+
+![alt text](image-64.png)
+
+When upload option is click, we will be able to see that we are able to upload only one image at a time. This is because on this route we are using `upload.single` middleware. As we are able to see in `app.js`.
+
+The multiupload page code is as follows, `multiImage.ejs`,
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/multiImage" method="post" enctype="multipart/form-data">
+        Username <input type="text" name="username" id="username"> <br>
+        Password <input type="text" name="password" id="password"> <br>
+        <input type="file" name="multiImageField" id="multiImageField">
+    </form>
+</body>
+</html>
+```
+
+The page looks something like this,
+
+![alt text](image-65.png)
+
+When upload option is click, we will be able to see that we are able to upload multiple images at a time. This is because on this route we are using `upload.array` middleware. As we are able to see in `app.js`.
+
+Following is the server code, `app.js`,
+
+```js
+const express=require('express')
+const multer=require('multer')
+const ejsMate=require('ejs-mate')
+const path=require('path')
+const upload=multer({dest:'upload/'})
+const app=express()
+
+
+app.set('view engine','ejs')
+app.set('views',path.join(__dirname,'views'))
+app.use(express.urlencoded({ extended: true }));
+app.engine('ejs',ejsMate)
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+//Follow are post routes of forms sending a single and multiple image. The route design using multer will look something like this.
+
+app.post("/singleImage",upload.single('singleImageField'),(req,res)=>{
+    console.log(req.body,req.file)
+})
+app.post("/multiImage",upload.array('multipleImageField'),(req,res)=>{
+    console.log(req.body,req.file)
+})
+
+//Follow are get routes of forms sending a single and multiple image. The route design using multer will look something like this.
+
+
+app.get("/singleImage",(req,res)=>{
+    res.render('singleImage.ejs')
+})
+
+app.get("/multiImage",(req,res)=>{
+    res.render('multiImage.ejs')
+})
+
+app.listen(3000)
+```
+
+Lets work with `singleImage` route. When POST request is sent the output on console looks something like this,
+
+![alt text](image-66.png)
+
+Lets work with `multiImage` route. When POST request is sent the output on console looks something like this,
+
+![alt text](image-67.png)
+
+Note that there will be upload folder created to store the image files that are being uploaded. Something like this,
+
+![alt text](image-68.png)
+
+Now given all this we have talked about, when it comes to development, our process of storing the file is a bit different than the process we have used above, that is to store file locally on upload folder.
+
+This time we are going to use cloud image storage services like `cloudinary` to store images.
+
+Perform the following steps before proceeding,
+
+* Go to cloudinary website.
+* Login and create a account.
+* Learn how to work with .env file to store all the secrets related to cloudinary account.
+
+    Lets expand on this point. We generally use .env file to store secrets of any API we might be deploying for development and production purposes. The steps to use it are simple,
+
+    * Create a .env file.
+    * Install the .env pakage.
+        ```
+        npm i dotenv
+        ```
+    * Initailise the pakage in app.js.
+        ```js
+        if(process.env.NODE_ENV!=='production'){
+            require('dotenv').config()
+        }
+        ```
+    * Now if we want to use any of the secrets in .env file, we can use this syntax,
+        ```js
+        process.env.__NameOfSecret__
+        ```
+
+    This is all we needed to learn about env till this point.
+* Now that we already know how to create .env file. Its time for us to store our secrets there. Once the cloudinary account has been created, we will see that it supplies us with three things, `CLOUD_NAME`, `API_KEY` and `SECRET`. We need to these three things in the .env file.
+
+* Next step is to start working with uploading files into cloudinary. For the initially we need to install 2 important libraries, they are,
+    ```
+    npm i cloudinary
+    npm i multer-storage-cloudinary
+    ```
+* Next step is to setup the application. The code to do so is as follows,
+    ```js
+    const cloudinary=require('cloudinary').v2
+    const {CloudinaryStorage}=require('multer-storage-cloudinary')
+
+    cloudinary.config({
+        cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+        api_key:process.env.CLOUDINARY_API_KEY,
+        api_secret:process.env.CLOUDINARY_SECRET
+    })
+
+    const storage=new CloudinaryStorage({
+        cloudinary,
+        params:{
+            folder:'demo',
+            allowedFormats:['jpeg','avif','png','jpg']
+        }
+    })
+
+    module.exports={
+        cloudinary,
+        storage
+    }
+    ```
+* Next step is to import the exports of this file in our main file, app.js. We have already seen the code before. The changes made to it are as follows,
+    ```js
+    const express=require('express')
+    const multer=require('multer')
+    const ejsMate=require('ejs-mate')
+    const path=require('path')
+    //First we import exports from the cloudinary scripts here in the main server file.
+
+    const {cloudinary,storage}=require('./cloudinary/index.js')
+
+    //The second change is to be made here. We make changes in upload variable. In place of dest:'upload/' we place storage which we have imported from the original cloudinary config script. 
+    const upload=multer({storage})
+    const app=express()
+
+    //Rest all of the code will remain the same.
+
+    app.set('view engine','ejs')
+    app.set('views',path.join(__dirname,'views'))
+    app.use(express.urlencoded({ extended: true }));
+    app.engine('ejs',ejsMate)
+    app.use(express.static(path.join(__dirname, 'public')));
+
+
+    app.post("/singleImage",upload.single('singleImageField'),(req,res)=>{
+        console.log(req.body,req.file)
+        res.send('See the console')
+    })
+    app.post("/multiImage",upload.array('multiImageField'),(req,res)=>{
+        console.log(req.body,req.files)
+        res.send('See the console')
+    })
+
+
+    app.get("/singleImage",(req,res)=>{
+        res.render('singleImage.ejs')
+    })
+
+    app.get("/multiImage",(req,res)=>{
+        res.render('multiImage.ejs')
+    })
+
+    app.listen(3000)
+    ```
+* Now that we have learned how to upload media to the cloudinary system, next step is to ensure storage of image links in the local database, so that the images can be used for our purposes. So lets create a demo database. The model is as follows,
 
