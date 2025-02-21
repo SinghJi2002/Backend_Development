@@ -15,7 +15,7 @@ function Navbar(props) {
     //To be executed only when a certain event happens.
     useEffect(()=>{
         alert("I will be executed when the color changes")
-    },)
+    },[props.color])
 
     //To be executed only when the navbar is truncated from app.
     useEffect(()=>{
